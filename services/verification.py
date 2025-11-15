@@ -54,7 +54,7 @@ async def verify_answer(user_id: int, answer: str):
         
         await db.add_to_blacklist(user_id, reason="人机验证失败次数过多", blocked_by=config.BOT_ID)
         message = (
-            "验证失败次数过多，您已被暂时阻止。\n\n"
+            "验证失败次数过多，您已被暂时封禁。\n\n"
             "如果您是认为误封，请重新发送消息并进行验证解除限制。"
         )
         return False, message, True
