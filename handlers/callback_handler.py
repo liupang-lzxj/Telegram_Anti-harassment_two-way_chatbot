@@ -114,6 +114,504 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.message.reply_text("现在您可以发送消息了！")
     
+    elif data == "panel_back":
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        total_users = await db.get_total_users_count()
+        blocked_users = await db.get_blocked_users_count()
+        is_enabled = await db.get_autoreply_enabled()
+        
+        message = (
+            f"管理面板\n\n"
+            f"统计信息:\n\n"
+            f"总用户数: {total_users}\n"
+            f"黑名单用户数: {blocked_users}\n"
+            f"自动回复状态: {'已启用' if is_enabled else '已禁用'}\n\n"
+            f"请选择要查看的功能："
+        )
+        
+        keyboard = [
+            [InlineKeyboardButton("黑名单管理", callback_data="panel_blacklist_page_1")],
+            [InlineKeyboardButton("所有用户信息", callback_data="panel_stats")],
+            [InlineKeyboardButton("被过滤消息", callback_data="panel_filtered_page_1")],
+            [InlineKeyboardButton("自动回复管理", callback_data="panel_autoreply")],
+        ]
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    elif data.startswith("panel_blacklist_page_"):
+        from services import blacklist
+        
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        try:
+            page = int(data.split("_")[3])
+        except (ValueError, IndexError):
+            await query.answer("无效的页码。", show_alert=True)
+            return
+        
+        message, keyboard = await blacklist.get_blacklist_keyboard(page=page)
+        
+        if keyboard:
+            keyboard_buttons = list(keyboard.inline_keyboard)
+            keyboard_buttons.append([InlineKeyboardButton("返回主面板", callback_data="panel_back")])
+            keyboard = InlineKeyboardMarkup(keyboard_buttons)
+        
+        if keyboard:
+            await query.edit_message_text(
+                text=message,
+                reply_markup=keyboard,
+                parse_mode='Markdown'
+            )
+        else:
+            back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+            await query.edit_message_text(text=message, reply_markup=back_keyboard)
+    
+    elif data == "panel_stats":
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        from services.blacklist import get_all_users_keyboard
+        
+        page = 1
+        message, keyboard = await get_all_users_keyboard(page=page)
+        
+        if keyboard:
+            keyboard_buttons = [list(row) for row in keyboard.inline_keyboard]
+            for i, row in enumerate(keyboard_buttons):
+                for j, button in enumerate(row):
+                    if button.callback_data == "stats_back_to_menu":
+                        keyboard_buttons[i][j] = InlineKeyboardButton("返回主面板", callback_data="panel_back")
+                        break
+            keyboard = InlineKeyboardMarkup(keyboard_buttons)
+        
+        if keyboard:
+            await query.edit_message_text(
+                text=message,
+                reply_markup=keyboard,
+                parse_mode='Markdown'
+            )
+        else:
+            back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+            await query.edit_message_text(text=message, reply_markup=back_keyboard, parse_mode='Markdown')
+    
+    elif data.startswith("panel_stats_all_users_page_"):
+        from services.blacklist import get_all_users_keyboard
+        
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        try:
+            page = int(data.split("_")[5])
+        except (ValueError, IndexError):
+            await query.answer("无效的页码。", show_alert=True)
+            return
+        
+        message, keyboard = await get_all_users_keyboard(page=page)
+        
+        if keyboard:
+            keyboard_buttons = [list(row) for row in keyboard.inline_keyboard]
+            for i, row in enumerate(keyboard_buttons):
+                for j, button in enumerate(row):
+                    if button.callback_data == "stats_back_to_menu":
+                        keyboard_buttons[i][j] = InlineKeyboardButton("返回主面板", callback_data="panel_back")
+                        break
+            keyboard = InlineKeyboardMarkup(keyboard_buttons)
+        
+        if keyboard:
+            await query.edit_message_text(
+                text=message,
+                reply_markup=keyboard,
+                parse_mode='Markdown'
+            )
+        else:
+            back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+            await query.edit_message_text(text=message, reply_markup=back_keyboard, parse_mode='Markdown')
+    
+    elif data.startswith("panel_stats_blacklist_page_"):
+        from services.blacklist import get_blacklist_keyboard_detailed
+        
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        try:
+            page = int(data.split("_")[4])
+        except (ValueError, IndexError):
+            await query.answer("无效的页码。", show_alert=True)
+            return
+        
+        message, keyboard = await get_blacklist_keyboard_detailed(page=page)
+        
+        if keyboard:
+            keyboard_buttons = [list(row) for row in keyboard.inline_keyboard]
+            for i, row in enumerate(keyboard_buttons):
+                for j, button in enumerate(row):
+                    if button.callback_data == "stats_back_to_menu":
+                        keyboard_buttons[i][j] = InlineKeyboardButton("返回主面板", callback_data="panel_back")
+                        break
+            keyboard = InlineKeyboardMarkup(keyboard_buttons)
+        
+        if keyboard:
+            await query.edit_message_text(
+                text=message,
+                reply_markup=keyboard,
+                parse_mode='Markdown'
+            )
+        else:
+            back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+            await query.edit_message_text(text=message, reply_markup=back_keyboard, parse_mode='Markdown')
+    
+    elif data.startswith("panel_filtered_page_"):
+        from .admin_handler import _format_filtered_messages, _get_filtered_messages_keyboard
+        
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        try:
+            page = int(data.split("_")[3])
+        except (ValueError, IndexError):
+            await query.answer("无效的页码。", show_alert=True)
+            return
+        
+        MESSAGES_PER_PAGE = 5
+
+        total_count = await db.get_filtered_messages_count()
+        
+        if total_count == 0:
+            back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+            await query.edit_message_text("没有找到被过滤的消息。", reply_markup=back_keyboard)
+            return
+        
+        total_pages = (total_count + MESSAGES_PER_PAGE - 1) // MESSAGES_PER_PAGE
+
+        if page < 1:
+            page = 1
+        elif page > total_pages:
+            page = total_pages
+
+        offset = (page - 1) * MESSAGES_PER_PAGE
+
+        messages = await db.get_filtered_messages(MESSAGES_PER_PAGE, offset)
+        
+        if not messages:
+            back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+            await query.edit_message_text("没有找到被过滤的消息。", reply_markup=back_keyboard)
+            return
+
+        response = await _format_filtered_messages(messages, page, total_pages)
+
+        keyboard = await _get_filtered_messages_keyboard(page, total_pages)
+        
+        if keyboard:
+            keyboard_buttons = [list(row) for row in keyboard.inline_keyboard]
+            keyboard_buttons.append([InlineKeyboardButton("返回主面板", callback_data="panel_back")])
+            keyboard = InlineKeyboardMarkup(keyboard_buttons)
+        else:
+            keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+
+        await query.edit_message_text(response, reply_markup=keyboard)
+    
+    elif data == "panel_autoreply":
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        is_enabled = await db.get_autoreply_enabled()
+        status_text = "已启用" if is_enabled else "已禁用"
+        
+        message = (
+            f"自动回复管理\n\n"
+            f"当前状态: {status_text}\n\n"
+            f"请选择操作："
+        )
+        
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "关闭自动回复" if is_enabled else "开启自动回复",
+                    callback_data="panel_autoreply_toggle"
+                )
+            ],
+            [InlineKeyboardButton("管理知识库", callback_data="panel_autoreply_kb_list_page_1")],
+            [InlineKeyboardButton("添加知识条目", callback_data="panel_autoreply_kb_add")],
+            [InlineKeyboardButton("返回主面板", callback_data="panel_back")],
+        ]
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    elif data == "panel_autoreply_toggle":
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        is_enabled = await db.get_autoreply_enabled()
+        await db.set_autoreply_enabled(not is_enabled)
+        new_status = "已启用" if not is_enabled else "已禁用"
+        await query.answer(f"自动回复已{new_status}", show_alert=True)
+        
+        is_enabled = await db.get_autoreply_enabled()
+        status_text = "已启用" if is_enabled else "已禁用"
+        
+        message = (
+            f"自动回复管理\n\n"
+            f"当前状态: {status_text}\n\n"
+            f"请选择操作："
+        )
+        
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "关闭自动回复" if is_enabled else "开启自动回复",
+                    callback_data="panel_autoreply_toggle"
+                )
+            ],
+            [InlineKeyboardButton("管理知识库", callback_data="panel_autoreply_kb_list_page_1")],
+            [InlineKeyboardButton("添加知识条目", callback_data="panel_autoreply_kb_add")],
+            [InlineKeyboardButton("返回主面板", callback_data="panel_back")],
+        ]
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    elif data.startswith("panel_autoreply_kb_list_page_"):
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        try:
+            page = int(data.split("_")[5])
+        except (ValueError, IndexError):
+            page = 1
+        
+        entries = await db.get_all_knowledge_entries()
+        if not entries:
+            back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+            await query.edit_message_text("知识库为空", reply_markup=back_keyboard)
+            return
+        
+        MESSAGES_PER_PAGE = 5
+        total_pages = (len(entries) + MESSAGES_PER_PAGE - 1) // MESSAGES_PER_PAGE
+        if page < 1:
+            page = 1
+        elif page > total_pages:
+            page = total_pages
+        
+        start_idx = (page - 1) * MESSAGES_PER_PAGE
+        end_idx = start_idx + MESSAGES_PER_PAGE
+        page_entries = entries[start_idx:end_idx]
+        
+        message = f"知识库条目 (第 {page}/{total_pages} 页)\n\n"
+        keyboard = []
+        
+        for entry in page_entries:
+            title = entry['title'][:30] + "..." if len(entry['title']) > 30 else entry['title']
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"{title}",
+                    callback_data=f"panel_autoreply_kb_view_{entry['id']}"
+                )
+            ])
+            keyboard.append([
+                InlineKeyboardButton(
+                    "编辑",
+                    callback_data=f"panel_autoreply_kb_edit_{entry['id']}"
+                ),
+                InlineKeyboardButton(
+                    "删除",
+                    callback_data=f"panel_autoreply_kb_delete_{entry['id']}"
+                )
+            ])
+        
+        nav_buttons = []
+        if page > 1:
+            nav_buttons.append(InlineKeyboardButton("上一页", callback_data=f"panel_autoreply_kb_list_page_{page-1}"))
+        if page < total_pages:
+            nav_buttons.append(InlineKeyboardButton("下一页", callback_data=f"panel_autoreply_kb_list_page_{page+1}"))
+        if nav_buttons:
+            keyboard.append(nav_buttons)
+        
+        keyboard.append([InlineKeyboardButton("返回主面板", callback_data="panel_back")])
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    elif data.startswith("panel_autoreply_kb_view_"):
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        try:
+            entry_id = int(data.split("_")[4])
+        except (ValueError, IndexError):
+            await query.answer("无效的条目ID", show_alert=True)
+            return
+        
+        entry = await db.get_knowledge_entry(entry_id)
+        if not entry:
+            await query.answer("条目不存在", show_alert=True)
+            return
+        
+        message = (
+            f"知识条目详情\n\n"
+            f"ID: {entry['id']}\n"
+            f"标题: {entry['title']}\n"
+            f"内容: {entry['content']}\n\n"
+            f"创建时间: {entry['created_at']}\n"
+            f"更新时间: {entry['updated_at']}"
+        )
+        
+        keyboard = [
+            [
+                InlineKeyboardButton("编辑", callback_data=f"panel_autoreply_kb_edit_{entry_id}"),
+                InlineKeyboardButton("删除", callback_data=f"panel_autoreply_kb_delete_{entry_id}")
+            ],
+            [InlineKeyboardButton("返回列表", callback_data="panel_autoreply_kb_list_page_1")],
+            [InlineKeyboardButton("返回主面板", callback_data="panel_back")],
+        ]
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    elif data.startswith("panel_autoreply_kb_edit_"):
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        try:
+            entry_id = int(data.split("_")[4])
+        except (ValueError, IndexError):
+            await query.answer("无效的条目ID", show_alert=True)
+            return
+        
+        entry = await db.get_knowledge_entry(entry_id)
+        if not entry:
+            await query.answer("条目不存在", show_alert=True)
+            return
+        
+        back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+        await query.edit_message_text(
+            f"编辑知识条目\n\n"
+            f"ID: {entry['id']}\n"
+            f"标题: {entry['title']}\n"
+            f"内容: {entry['content']}\n\n"
+            f"请使用以下格式发送编辑命令：\n"
+            f"`/autoreply edit {entry_id} <新标题> <新内容>`\n\n"
+            f"示例：\n"
+            f"`/autoreply edit {entry_id} 新标题 新内容`",
+            parse_mode='Markdown',
+            reply_markup=back_keyboard
+        )
+    
+    elif data.startswith("panel_autoreply_kb_delete_"):
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        try:
+            entry_id = int(data.split("_")[4])
+        except (ValueError, IndexError):
+            await query.answer("无效的条目ID", show_alert=True)
+            return
+        
+        entry = await db.get_knowledge_entry(entry_id)
+        if not entry:
+            await query.answer("条目不存在", show_alert=True)
+            return
+        
+        await db.delete_knowledge_entry(entry_id)
+        await query.answer(f"已删除: {entry['title']}", show_alert=True)
+        
+        entries = await db.get_all_knowledge_entries()
+        if not entries:
+            back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+            await query.edit_message_text("知识库为空", reply_markup=back_keyboard)
+            return
+        
+        page = 1
+        MESSAGES_PER_PAGE = 5
+        total_pages = (len(entries) + MESSAGES_PER_PAGE - 1) // MESSAGES_PER_PAGE
+        
+        start_idx = (page - 1) * MESSAGES_PER_PAGE
+        end_idx = start_idx + MESSAGES_PER_PAGE
+        page_entries = entries[start_idx:end_idx]
+        
+        message = f"知识库条目 (第 {page}/{total_pages} 页)\n\n"
+        keyboard = []
+        
+        for entry in page_entries:
+            title = entry['title'][:30] + "..." if len(entry['title']) > 30 else entry['title']
+            keyboard.append([
+                InlineKeyboardButton(
+                    f"{title}",
+                    callback_data=f"panel_autoreply_kb_view_{entry['id']}"
+                )
+            ])
+            keyboard.append([
+                InlineKeyboardButton(
+                    "编辑",
+                    callback_data=f"panel_autoreply_kb_edit_{entry['id']}"
+                ),
+                InlineKeyboardButton(
+                    "删除",
+                    callback_data=f"panel_autoreply_kb_delete_{entry['id']}"
+                )
+            ])
+        
+        nav_buttons = []
+        if page < total_pages:
+            nav_buttons.append(InlineKeyboardButton("下一页", callback_data=f"panel_autoreply_kb_list_page_{page+1}"))
+        if nav_buttons:
+            keyboard.append(nav_buttons)
+        
+        keyboard.append([InlineKeyboardButton("返回主面板", callback_data="panel_back")])
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode='Markdown'
+        )
+    
+    elif data == "panel_autoreply_kb_add":
+        if not await db.is_admin(user_id):
+            await query.answer("抱歉，您没有权限执行此操作。", show_alert=True)
+            return
+        
+        back_keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+        await query.edit_message_text(
+            "添加知识条目\n\n"
+            "请使用以下格式发送新条目：\n"
+            "`/autoreply add <标题> <内容>`\n\n"
+            "示例：\n"
+            "`/autoreply add 常见问题 这是问题的答案`",
+            parse_mode='Markdown',
+            reply_markup=back_keyboard
+        )
+    
     elif data.startswith("unblock_"):
         from services.blacklist import verify_unblock_answer
         answer = data.split("_", 1)[1]
@@ -135,7 +633,10 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         current_page = 1
         message_text = query.message.text or ""
-        is_stats_page = "黑名单用户列表" in message_text or "stats_list_blacklist" in str(query.message.reply_markup)
+        reply_markup_str = str(query.message.reply_markup) if query.message.reply_markup else ""
+        
+        is_panel = "panel_blacklist" in reply_markup_str or "panel_stats_blacklist" in reply_markup_str
+        is_stats_page = "黑名单用户列表" in message_text or "stats_list_blacklist" in reply_markup_str
         
         if "第" in message_text and "/" in message_text:
             try:
@@ -145,8 +646,24 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except:
                 pass
         
-        if is_stats_page:
+        if is_panel:
+            message, keyboard = await blacklist.get_blacklist_keyboard(page=current_page)
+            if keyboard:
+                keyboard_buttons = [list(row) for row in keyboard.inline_keyboard]
+                keyboard_buttons.append([InlineKeyboardButton("返回主面板", callback_data="panel_back")])
+                keyboard = InlineKeyboardMarkup(keyboard_buttons)
+            else:
+                keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("返回主面板", callback_data="panel_back")]])
+        elif is_stats_page:
             message, keyboard = await blacklist.get_blacklist_keyboard_detailed(page=current_page)
+            if keyboard:
+                keyboard_buttons = [list(row) for row in keyboard.inline_keyboard]
+                for i, row in enumerate(keyboard_buttons):
+                    for j, button in enumerate(row):
+                        if button.callback_data == "stats_back_to_menu":
+                            keyboard_buttons[i][j] = InlineKeyboardButton("返回主面板", callback_data="panel_back")
+                            break
+                keyboard = InlineKeyboardMarkup(keyboard_buttons)
         else:
             message, keyboard = await blacklist.get_blacklist_keyboard(page=current_page)
         

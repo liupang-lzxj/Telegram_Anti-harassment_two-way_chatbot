@@ -1,5 +1,5 @@
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters
-from .command_handler import start, help_command, block, unblock, blacklist, stats, getid, autoreply
+from .command_handler import start, help_command, block, unblock, blacklist, stats, getid, autoreply, panel
 from .user_handler import handle_message
 from .callback_handler import handle_callback
 from .admin_handler import handle_admin_reply, view_filtered
@@ -14,6 +14,7 @@ def register_handlers(app: Application):
         app.add_handler(CommandHandler("help", help_command, filters=filters.ChatType.PRIVATE))
         app.add_handler(CommandHandler("block", block))
         app.add_handler(CommandHandler("unblock", unblock))
+        app.add_handler(CommandHandler("panel", panel))
         app.add_handler(CommandHandler("blacklist", blacklist))
         app.add_handler(CommandHandler("stats", stats))
         app.add_handler(CommandHandler("view_filtered", view_filtered))

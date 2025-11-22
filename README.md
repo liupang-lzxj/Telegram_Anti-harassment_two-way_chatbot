@@ -39,6 +39,7 @@
 | 🖼️ **多媒体支持** | 无缝转发图片、视频、音频、文档等多种媒体格式，并完整保留 Markdown 格式。 |
 | ⚫ **黑名单管理** | 管理员可轻松拉黑/解封用户。被拉黑用户将收到友好提示，并可通过 AI 生成的问答挑战进行自助解封。 |
 | 🔐 **权限控制** | 基于 Telegram ID 的多管理员权限系统，确保只有授权人员才能执行管理操作。 |
+| 🤖 **智能自动回复** | 基于知识库的 AI 自动回复功能，在内容审查通过后自动回答用户问题，支持 Markdown 格式，管理员可随时查看自动回复内容。 |
 
 ---
 
@@ -57,7 +58,7 @@ cd tg-bot-data
 2. 下载 .env.example 配置文件模板，并重命名为 .env
 
 ```bash
-# wget https://raw.githubusercontent.com/Hamster-Prime/Telegram_Anti-harassment_two-way_chatbot/main/.env.example -O .env
+wget https://raw.githubusercontent.com/Hamster-Prime/Telegram_Anti-harassment_two-way_chatbot/main/.env.example -O .env
 ```
 
 3. 编辑 .env 文件，填入您的配置
@@ -159,9 +160,9 @@ docker compose up -d
 更新容器：
 ```bash
 # 在tg-bot-data目录下，执行以下命令
-docker-compose down
-docker-compose pull
-docker-compose up -d
+docker compose down
+docker compose pull
+docker compose up -d
 ```
 
 [使用 Watchtower 自动更新本项目](watchtower/README.md)
@@ -254,6 +255,59 @@ python bot.py
 - `/blacklist` - 查看当前的黑名单列表。
 - `/stats` - 查看机器人运行统计信息。
 - `/view_filtered` - 查看被拦截信息及发送者。
+- `/autoreply` - 管理自动回复功能（开启/关闭、管理知识库）。
+
+### 🤖 自动回复功能
+
+机器人支持基于知识库的智能自动回复功能，可以在内容审查通过后自动回答用户的问题。
+
+#### 功能特点
+
+- ✅ **严格基于知识库**：AI 只会根据知识库中的内容回答，不会编造信息
+- ✅ **内容审查后触发**：自动回复仅在内容审查通过后执行
+- ✅ **Markdown 格式支持**：自动回复支持 Markdown 格式，提供更好的阅读体验
+- ✅ **管理员通知**：自动回复内容会同时发送给管理员，方便监控和管理
+
+#### 使用步骤
+
+1. **开启自动回复**
+   - 使用 `/autoreply` 命令打开管理菜单
+   - 点击"开启自动回复"按钮
+
+2. **添加知识库条目**
+   - 方式一：在管理菜单中点击"添加知识条目"
+   - 方式二：使用命令 `/autoreply add <标题> <内容>`
+   - 示例：`/autoreply add 常见问题 这是问题的答案`
+
+3. **管理知识库**
+   - 使用 `/autoreply` 命令进入管理菜单
+   - 点击"管理知识库"查看所有条目
+   - 可以查看、编辑、删除知识条目
+
+#### 命令说明
+
+- `/autoreply` - 显示自动回复管理菜单
+- `/autoreply on` - 开启自动回复
+- `/autoreply off` - 关闭自动回复
+- `/autoreply add <标题> <内容>` - 添加知识条目
+- `/autoreply edit <ID> <标题> <内容>` - 编辑知识条目
+- `/autoreply delete <ID>` - 删除知识条目
+- `/autoreply list` - 列出所有知识条目
+
+#### 工作流程
+
+1. 用户发送消息
+2. 系统进行内容审查（AI 垃圾信息检测）
+3. 内容审查通过后，系统检查是否启用自动回复
+4. 如果启用，系统根据知识库生成回复
+5. 自动回复以 Markdown 格式发送给用户
+6. 自动回复内容同时发送给管理员（回复用户消息）
+
+#### 注意事项
+
+- 自动回复仅在知识库中有相关内容时才会触发
+- 如果知识库中没有相关内容，系统不会回复，等待管理员手动回复
+- 建议定期更新知识库，添加常见问题和答案
 
 ---
 

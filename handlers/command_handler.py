@@ -140,6 +140,34 @@ async def getid(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(message, parse_mode='Markdown')
 
 @admin_only
+async def panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    total_users = await db.get_total_users_count()
+    blocked_users = await db.get_blocked_users_count()
+    is_enabled = await db.get_autoreply_enabled()
+    
+    message = (
+        f"管理面板\n\n"
+        f"统计信息:\n\n"
+        f"总用户数: {total_users}\n"
+        f"黑名单用户数: {blocked_users}\n"
+        f"自动回复状态: {'已启用' if is_enabled else '已禁用'}\n\n"
+        f"请选择要查看的功能："
+    )
+    
+    keyboard = [
+        [InlineKeyboardButton("黑名单管理", callback_data="panel_blacklist_page_1")],
+        [InlineKeyboardButton("所有用户信息", callback_data="panel_stats")],
+        [InlineKeyboardButton("被过滤消息", callback_data="panel_filtered_page_1")],
+        [InlineKeyboardButton("自动回复管理", callback_data="panel_autoreply")],
+    ]
+    
+    await update.message.reply_text(
+        message,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode='Markdown'
+    )
+
+@admin_only
 async def autoreply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         is_enabled = await db.get_autoreply_enabled()
