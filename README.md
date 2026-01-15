@@ -506,10 +506,11 @@ python bot.py
 
 <details>
 <summary>📝 更多详细说明 (点击展开)</summary>
-在 `.env` 中添加 `RSS_CHECK_INTERVAL=300` 控制轮询间隔（秒），建议 ≥ 120
 
-> 提示：初次运行会在 `RSS_DATA_FILE` 指定的位置创建 JSON 文件，文件可备份以迁移订阅数据。
-> 管理员也可以随时在 `/panel` → “RSS 功能管理” 中开关功能、查看订阅并执行删除操作。
+#### 提示
+- 初次运行会在 `RSS_DATA_FILE` 指定的位置创建 JSON 文件，文件可备份以迁移订阅数据。
+- 管理员也可以随时在 `/panel` → “RSS 功能管理” 中开关功能、查看订阅并执行删除操作。
+- 在 `.env` 中添加 `RSS_CHECK_INTERVAL=300` 控制轮询间隔（秒），建议 ≥ 120 
 
 #### 命令列表（仅限私聊）
 - `/rss_add <url>` `/rss_remove <url|ID>` `/rss_list`：管理订阅源
